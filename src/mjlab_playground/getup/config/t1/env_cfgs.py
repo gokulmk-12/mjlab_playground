@@ -2,6 +2,7 @@
 
 from mjlab.envs import ManagerBasedRlEnvCfg
 from mjlab.envs import mdp as envs_mdp
+from mjlab.managers.curriculum_manager import CurriculumTermCfg
 from mjlab.managers.event_manager import EventTermCfg
 from mjlab.managers.reward_manager import RewardTermCfg
 from mjlab.managers.scene_entity_config import SceneEntityCfg
@@ -113,9 +114,46 @@ def booster_t1_getup_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
   )
 
   cfg.events["reset_fallen_or_standing"].params["fall_height"] = 1.2
-  cfg.actions["joint_pos"].settle_steps = 50  # 1s at 50Hz
 
-  cfg.curriculum = {}
+  # Curriculum: delay all stages until after getup is reliably established (~iter 600).
+  # Energy thresholds are much higher than Go1 since T1 has 23 joints vs 12.
+  cfg.curriculum = {
+    "action_rate_weight": CurriculumTermCfg(
+      func=mdp.reward_curriculum,
+      params={
+        "reward_name": "action_rate_l2",
+        "stages": [
+          {"step": 0, "weight": -0.01},
+          {"step": 600 * 24, "weight": -0.05},
+          {"step": 900 * 24, "weight": -0.08},
+          {"step": 1200 * 24, "weight": -0.1},
+        ],
+      },
+    ),
+    "joint_vel_weight": CurriculumTermCfg(
+      func=mdp.reward_curriculum,
+      params={
+        "reward_name": "joint_vel_l2",
+        "stages": [
+          {"step": 0, "weight": 0.0},
+          {"step": 900 * 24, "weight": -0.005},
+          {"step": 1200 * 24, "weight": -0.008},
+          {"step": 1500 * 24, "weight": -0.01},
+        ],
+      },
+    ),
+    "energy_threshold": CurriculumTermCfg(
+      func=mdp.termination_curriculum,
+      params={
+        "termination_name": "energy",
+        "stages": [
+          {"step": 900 * 24, "params": {"threshold": 3000.0}},
+          {"step": 1200 * 24, "params": {"threshold": 2000.0}},
+          {"step": 1500 * 24, "params": {"threshold": 1500.0}},
+        ],
+      },
+    ),
+  }
 
   if play:
     cfg.observations["actor"].enable_corruption = False

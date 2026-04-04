@@ -198,9 +198,6 @@ for a in T1_ARTICULATION.actuators:
   assert e is not None
   for n in names:
     T1_ACTION_SCALE[n] = 0.25 * e / s
-    print(
-      f"{n}: stiffness={s:.3f}, effort_limit={e:.3f}, action_scale={T1_ACTION_SCALE[n]:.6f}"
-    )
 
 
 if __name__ == "__main__":
