@@ -120,6 +120,7 @@ def booster_t1_getup_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
 
   assert isinstance(cfg.actions["joint_pos"], SettleRelativeJointPositionActionCfg)
   cfg.actions["joint_pos"].settle_steps = 50  # 1s at 50Hz action rate.
+  cfg.terminations["energy"].params["settle_steps"] = 50
 
   # Curriculum: delay all stages until after getup is reliably established (~iter 600).
   # Energy thresholds are much higher than Go1 since T1 has 23 joints vs 12.
@@ -157,7 +158,7 @@ def booster_t1_getup_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
           {"step": 1200 * 24, "params": {"threshold": 2000.0}},
           {"step": 1500 * 24, "params": {"threshold": 1500.0}},
           {"step": 1700 * 24, "params": {"threshold": 1000.0}},
-          {"step": 1900 * 24, "params": {"threshold": 700.0}},
+          {"step": 2200 * 24, "params": {"threshold": 700.0}},
         ],
       },
     ),

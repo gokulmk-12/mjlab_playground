@@ -17,11 +17,13 @@ _DEFAULT_ASSET_CFG = SceneEntityCfg("robot")
 def energy_termination(
   env: ManagerBasedRlEnv,
   threshold: float = float("inf"),
+  settle_steps: int = 0,
   asset_cfg: SceneEntityCfg = _DEFAULT_ASSET_CFG,
 ) -> torch.Tensor:
   """Terminate when mechanical power exceeds threshold.
 
-  Power = sum(|actuator_force * joint_vel|).
+  Power = sum(|actuator_force * joint_vel|). Skips the first
+  settle_steps steps so drop/settle dynamics don't trigger early termination.
   """
   asset: Entity = env.scene[asset_cfg.name]
   power = torch.sum(
@@ -31,4 +33,5 @@ def energy_termination(
     ),
     dim=-1,
   )
-  return power > threshold
+  past_settle = env.episode_length_buf > settle_steps
+  return past_settle & (power > threshold)
