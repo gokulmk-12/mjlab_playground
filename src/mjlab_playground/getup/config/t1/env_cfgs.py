@@ -13,8 +13,7 @@ from mjlab_playground.getup import mdp
 from mjlab_playground.getup.getup_env_cfg import make_getup_env_cfg
 from mjlab_playground.getup.mdp.actions import SettleRelativeJointPositionActionCfg
 
-# From reference t1_getup.py and confirmed via qpos[2]=0.665 at home keyframe.
-# Waist body is 0.1155m below trunk (XML offset), so 0.665 - 0.1155 ≈ 0.55.
+# Derived from home keyframe.
 _TORSO_HEIGHT = 0.67
 _WAIST_HEIGHT = 0.55
 
@@ -47,8 +46,8 @@ def booster_t1_getup_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     params={"sensor_name": self_collision_cfg.name},
   )
 
-  # Torso + waist height. Waist reward prevents "sitting on booty" local minimum
-  # where torso is high but waist (pelvis) stays near ground.
+  # Torso + waist height. Waist reward prevents "sitting on booty or knees" local
+  # minimum where torso is high but waist (pelvis) stays near ground.
   cfg.rewards["torso_height"].params["desired_height"] = _TORSO_HEIGHT
   cfg.rewards["waist_height"] = RewardTermCfg(
     func=mdp.body_height_reward,
@@ -122,8 +121,6 @@ def booster_t1_getup_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
   cfg.actions["joint_pos"].settle_steps = 50  # 1s at 50Hz action rate.
   cfg.terminations["energy"].params["settle_steps"] = 50
 
-  # Curriculum: delay all stages until after getup is reliably established (~iter 600).
-  # Energy thresholds are much higher than Go1 since T1 has 23 joints vs 12.
   cfg.curriculum = {
     "action_rate_weight": CurriculumTermCfg(
       func=mdp.reward_curriculum,

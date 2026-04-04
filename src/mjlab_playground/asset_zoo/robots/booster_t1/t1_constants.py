@@ -22,6 +22,7 @@ def get_spec() -> mujoco.MjSpec:
 
 ##
 # Actuator config.
+# Reference: https://booster.feishu.cn/wiki/JGZAwk8CUi5m6nklgxMcp2KlnVe
 ##
 
 _rpm = lambda r: r * 2 * 3.14159265 / 60  # noqa: E731
@@ -176,11 +177,7 @@ T1_ARTICULATION = EntityArticulationInfoCfg(
 
 
 def get_t1_robot_cfg() -> EntityCfg:
-  """Get a fresh T1 robot configuration instance.
-
-  Returns a new EntityCfg instance each time to avoid mutation issues when
-  the config is shared across multiple places.
-  """
+  """Get a fresh T1 robot configuration instance."""
   return EntityCfg(
     init_state=HOME_KEYFRAME,
     collisions=(FULL_COLLISION,),
