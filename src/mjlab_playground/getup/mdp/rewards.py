@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from typing import TYPE_CHECKING
 
 import torch
@@ -36,6 +37,25 @@ def orientation_reward(
   return torch.exp(-2.0 * error)
 
 
+def body_height_reward(
+  env: ManagerBasedRlEnv,
+  desired_height: float,
+  asset_cfg: SceneEntityCfg = _DEFAULT_ASSET_CFG,
+) -> torch.Tensor:
+  """Reward for raising a specific body to the desired height.
+
+  Like torso_height_reward but targets a named body via asset_cfg.body_ids
+  instead of the root link. Use asset_cfg=SceneEntityCfg("robot", body_names=("Waist",))
+  to target e.g. the waist.
+
+  Returns a value in [0, 1].
+  """
+  asset: Entity = env.scene[asset_cfg.name]
+  height = asset.data.body_link_pos_w[:, asset_cfg.body_ids, 2].squeeze(-1)
+  clamped = torch.clamp(height, max=desired_height)
+  return (torch.exp(clamped) - 1.0) / (math.exp(desired_height) - 1.0)
+
+
 def torso_height_reward(
   env: ManagerBasedRlEnv,
   desired_height: float = 0.275,
@@ -43,12 +63,12 @@ def torso_height_reward(
 ) -> torch.Tensor:
   """Reward for raising the torso to the desired height.
 
-  Returns exp(min(height, desired_height)) - 1.
+  Returns a value in [0, 1].
   """
   asset: Entity = env.scene[asset_cfg.name]
   height = asset.data.root_link_pos_w[:, 2]
   clamped = torch.clamp(height, max=desired_height)
-  return torch.exp(clamped) - 1.0
+  return (torch.exp(clamped) - 1.0) / (math.exp(desired_height) - 1.0)
 
 
 def _is_upright(asset: Entity, orientation_threshold: float) -> torch.Tensor:
