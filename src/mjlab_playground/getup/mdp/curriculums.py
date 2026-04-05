@@ -22,9 +22,9 @@ def termination_curriculum(
 ) -> dict[str, torch.Tensor]:
   """Update a termination term's params based on training steps.
 
-  Each stage specifies a ``step`` threshold and a ``params`` dict.
-  When ``env.common_step_counter`` reaches a stage's ``step``, the
-  params are applied. Later stages take precedence.
+  Each stage specifies a ``step`` threshold and a ``params`` dict. When
+  ``env.common_step_counter`` reaches a stage's ``step``, the params are applied.
+  Later stages take precedence.
   """
   del env_ids
   term_cfg = env.termination_manager.get_term_cfg(termination_name)

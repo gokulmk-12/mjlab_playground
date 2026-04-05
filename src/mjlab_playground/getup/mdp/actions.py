@@ -17,11 +17,11 @@ if TYPE_CHECKING:
 
 @dataclass(kw_only=True)
 class SettleRelativeJointPositionActionCfg(RelativeJointPositionActionCfg):
-  """RelativeJointPositionActionCfg with settle support.
+  """RelativeJointPositionActionCfg that disables actions for the first N steps.
 
-  During the settle window after reset, the policy action is ignored and
-  the robot holds its current position. Only envs flagged in
-  ``env.extras["settle_mask"]`` are affected (set by the reset event).
+  Since the robot is dropped from a height in a random configuration, actions
+  are suppressed until ``settle_steps`` env steps have passed, allowing the
+  robot to land and settle before the policy takes over.
   """
 
   settle_steps: int = 0
@@ -33,7 +33,7 @@ class SettleRelativeJointPositionActionCfg(RelativeJointPositionActionCfg):
 
 
 class SettleRelativeJointPositionAction(RelativeJointPositionAction):
-  """RelativeJointPositionAction that holds current position during settle."""
+  """RelativeJointPositionAction that disables actions for the first N steps."""
 
   def __init__(
     self,

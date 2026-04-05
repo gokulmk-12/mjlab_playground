@@ -12,6 +12,8 @@ from mjlab.utils.spec_config import CollisionCfg
 from mjlab_playground.getup import mdp
 from mjlab_playground.getup.getup_env_cfg import make_getup_env_cfg
 
+_TORSO_HEIGHT = 0.275
+
 
 def unitree_go1_getup_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
   """Create Unitree Go1 getup task configuration."""
@@ -34,8 +36,6 @@ def unitree_go1_getup_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
   cfg.scene.entities = {"robot": robot_cfg}
 
   cfg.sim.njmax = 200
-  cfg.sim.mujoco.impratio = 10
-  cfg.sim.mujoco.cone = "elliptic"
 
   # Self-collision sensor (history_length matches decimation=4).
   self_collision_cfg = ContactSensorCfg(
@@ -48,6 +48,12 @@ def unitree_go1_getup_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     history_length=4,
   )
   cfg.scene.sensors = (cfg.scene.sensors or ()) + (self_collision_cfg,)
+
+  cfg.rewards["torso_height"].params["desired_height"] = _TORSO_HEIGHT
+  cfg.rewards["torso_height"].params["asset_cfg"] = SceneEntityCfg(
+    "robot", body_names=("trunk",)
+  )
+  cfg.metrics["getup_success"].params["desired_height"] = _TORSO_HEIGHT
 
   cfg.rewards["self_collisions"] = RewardTermCfg(
     func=mdp.self_collision_cost,
@@ -76,7 +82,7 @@ def unitree_go1_getup_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
       "asset_cfg": SceneEntityCfg("robot", geom_names=(".*_collision",)),
       "operation": "abs",
       "axes": [0],
-      "ranges": (0.3, 1.5),
+      "ranges": (0.3, 1.2),
       "shared_random": True,
     },
   )

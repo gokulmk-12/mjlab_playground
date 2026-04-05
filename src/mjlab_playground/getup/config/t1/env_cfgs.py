@@ -25,8 +25,6 @@ def booster_t1_getup_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
   cfg.scene.entities = {"robot": get_t1_robot_cfg()}
 
   cfg.sim.njmax = 200
-  cfg.sim.mujoco.impratio = 10
-  cfg.sim.mujoco.cone = "elliptic"
 
   # Self-collision sensor.
   self_collision_cfg = ContactSensorCfg(
@@ -49,8 +47,11 @@ def booster_t1_getup_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
   # Torso + waist height. Waist reward prevents "sitting on booty or knees" local
   # minimum where torso is high but waist (pelvis) stays near ground.
   cfg.rewards["torso_height"].params["desired_height"] = _TORSO_HEIGHT
+  cfg.rewards["torso_height"].params["asset_cfg"] = SceneEntityCfg(
+    "robot", body_names=("Trunk",)
+  )
   cfg.rewards["waist_height"] = RewardTermCfg(
-    func=mdp.body_height_reward,
+    func=mdp.height_reward,
     weight=1.0,
     params={
       "desired_height": _WAIST_HEIGHT,
@@ -87,7 +88,7 @@ def booster_t1_getup_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
       "asset_cfg": SceneEntityCfg("robot", geom_names=(".*_collision",)),
       "operation": "abs",
       "axes": [0],
-      "ranges": (0.3, 1.5),
+      "ranges": (0.3, 1.2),
       "shared_random": True,
     },
   )

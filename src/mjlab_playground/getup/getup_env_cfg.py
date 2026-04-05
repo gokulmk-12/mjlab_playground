@@ -98,6 +98,7 @@ def make_getup_env_cfg() -> ManagerBasedRlEnvCfg:
   ##
 
   events = {
+    # Reset.
     "reset_fallen_or_standing": EventTermCfg(
       func=mdp.reset_fallen_or_standing,
       mode="reset",
@@ -107,6 +108,7 @@ def make_getup_env_cfg() -> ManagerBasedRlEnvCfg:
         "velocity_range": 0.5,
       },
     ),
+    # Domain randomization.
     "encoder_bias": EventTermCfg(
       mode="startup",
       func=dr.encoder_bias,
@@ -139,10 +141,9 @@ def make_getup_env_cfg() -> ManagerBasedRlEnvCfg:
       func=mdp.getup_success,
       reduce="last",
       params={
-        "desired_height": 0.275,
         "height_tolerance": 0.02,
         "orientation_threshold": 0.05,
-      },
+      },  # Set desired_height per-robot.
     ),
   }
 
@@ -156,9 +157,9 @@ def make_getup_env_cfg() -> ManagerBasedRlEnvCfg:
       weight=1.0,
     ),
     "torso_height": RewardTermCfg(
-      func=mdp.torso_height_reward,
+      func=mdp.height_reward,
       weight=1.0,
-      params={"desired_height": 0.275},
+      params={},  # Set desired_height and asset_cfg per-robot.
     ),
     "posture": RewardTermCfg(
       func=mdp.gated_posture_reward,
@@ -178,11 +179,6 @@ def make_getup_env_cfg() -> ManagerBasedRlEnvCfg:
   # Curriculum
   ##
 
-  # Curriculum (1.5K iterations):
-  #   Phase 1 (0 to 500):     Learn to stand up, minimal penalties.
-  #   Phase 2 (500 to 900):   Gentle smoothing.
-  #   Phase 3 (900 to 1200):  Moderate tightening.
-  #   Phase 4 (1200 to 1500): Final deployment quality with 400W cap.
   curriculum = {
     "action_rate_weight": CurriculumTermCfg(
       func=mdp.reward_curriculum,
@@ -265,6 +261,8 @@ def make_getup_env_cfg() -> ManagerBasedRlEnvCfg:
         timestep=0.005,
         iterations=10,
         ls_iterations=20,
+        impratio=10,
+        cone="elliptic",
       ),
     ),
     decimation=4,
