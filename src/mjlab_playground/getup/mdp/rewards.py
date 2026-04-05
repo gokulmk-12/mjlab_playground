@@ -10,7 +10,7 @@ from mjlab.entity import Entity
 from mjlab.managers.metrics_manager import MetricsTermCfg
 from mjlab.managers.reward_manager import RewardTermCfg
 from mjlab.managers.scene_entity_config import SceneEntityCfg
-from mjlab.sensor import ContactSensor
+from mjlab.tasks.velocity.mdp.rewards import self_collision_cost  # noqa: F401
 from mjlab.utils.lab_api.string import resolve_matching_names_values
 
 if TYPE_CHECKING:
@@ -26,10 +26,7 @@ def orientation_reward(
   env: ManagerBasedRlEnv,
   asset_cfg: SceneEntityCfg = _DEFAULT_ASSET_CFG,
 ) -> torch.Tensor:
-  """Reward for upright orientation.
-
-  Returns exp(-2 * ||up - projected_gravity||^2).
-  """
+  """Reward for upright orientation."""
   asset: Entity = env.scene[asset_cfg.name]
   gravity = asset.data.projected_gravity_b
   up = _UP_VEC.to(gravity.device)
@@ -37,36 +34,14 @@ def orientation_reward(
   return torch.exp(-2.0 * error)
 
 
-def body_height_reward(
+def height_reward(
   env: ManagerBasedRlEnv,
   desired_height: float,
   asset_cfg: SceneEntityCfg = _DEFAULT_ASSET_CFG,
 ) -> torch.Tensor:
-  """Reward for raising a specific body to the desired height.
-
-  Like torso_height_reward but targets a named body via asset_cfg.body_ids
-  instead of the root link. Use asset_cfg=SceneEntityCfg("robot", body_names=("Waist",))
-  to target e.g. the waist.
-
-  Returns a value in [0, 1].
-  """
+  """Reward for raising a body to the desired height."""
   asset: Entity = env.scene[asset_cfg.name]
   height = asset.data.body_link_pos_w[:, asset_cfg.body_ids, 2].squeeze(-1)
-  clamped = torch.clamp(height, max=desired_height)
-  return (torch.exp(clamped) - 1.0) / (math.exp(desired_height) - 1.0)
-
-
-def torso_height_reward(
-  env: ManagerBasedRlEnv,
-  desired_height: float = 0.275,
-  asset_cfg: SceneEntityCfg = _DEFAULT_ASSET_CFG,
-) -> torch.Tensor:
-  """Reward for raising the torso to the desired height.
-
-  Returns a value in [0, 1].
-  """
-  asset: Entity = env.scene[asset_cfg.name]
-  height = asset.data.root_link_pos_w[:, 2]
   clamped = torch.clamp(height, max=desired_height)
   return (torch.exp(clamped) - 1.0) / (math.exp(desired_height) - 1.0)
 
@@ -88,13 +63,7 @@ def _is_at_desired_height(
 
 
 class gated_posture_reward:
-  """Reward for returning to default pose, gated on being upright.
-
-  Uses per-joint standard deviations for fine-grained control over which
-  joints matter most. Implemented as a class to resolve the std dict once.
-
-  Returns is_upright * exp(-mean(error^2 / std^2)).
-  """
+  """Reward for returning to default pose, gated on being upright."""
 
   def __init__(self, cfg: RewardTermCfg, env: ManagerBasedRlEnv):
     asset: Entity = env.scene[cfg.params["asset_cfg"].name]
@@ -129,12 +98,7 @@ class gated_posture_reward:
 
 
 class getup_success:
-  """Binary success metric: 1 once the robot has stood up, 0 otherwise.
-
-  Latches to 1.0 when the standing condition is first met. Use with ``reduce="last"``
-  in MetricsTermCfg so the manager reports the final value at episode end, giving a
-  clean 0-to-1 success rate.
-  """
+  """Binary success metric: 1 once the robot has stood up, 0 otherwise."""
 
   def __init__(self, cfg: MetricsTermCfg, env: ManagerBasedRlEnv):
     self._stood_up = torch.zeros(env.num_envs, device=env.device)
@@ -159,23 +123,3 @@ class getup_success:
     )
     self._stood_up = torch.maximum(self._stood_up, standing)
     return self._stood_up
-
-
-def self_collision_cost(
-  env: ManagerBasedRlEnv,
-  sensor_name: str,
-  force_threshold: float = 10.0,
-) -> torch.Tensor:
-  """Penalize self-collisions.
-
-  Counts substeps where any contact force exceeds *force_threshold* using the sensor's
-  force history.
-  """
-  sensor: ContactSensor = env.scene[sensor_name]
-  data = sensor.data
-  if data.force_history is not None:
-    force_mag = torch.norm(data.force_history, dim=-1)  # [B, N, H]
-    hit = (force_mag > force_threshold).any(dim=1)  # [B, H]
-    return hit.sum(dim=-1).float()
-  assert data.found is not None
-  return data.found.sum(dim=-1).float()

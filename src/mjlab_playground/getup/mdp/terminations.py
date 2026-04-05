@@ -22,8 +22,8 @@ def energy_termination(
 ) -> torch.Tensor:
   """Terminate when mechanical power exceeds threshold.
 
-  Power = sum(|actuator_force * joint_vel|). Skips the first
-  settle_steps steps so drop/settle dynamics don't trigger early termination.
+  Power = sum(|actuator_force * joint_vel|). Skips the first settle_steps steps so
+  drop/settle dynamics don't trigger early termination.
   """
   asset: Entity = env.scene[asset_cfg.name]
   power = torch.sum(
