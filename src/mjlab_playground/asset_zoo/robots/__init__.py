@@ -4,3 +4,6 @@ from mjlab_playground.asset_zoo.robots.booster_t1.t1_constants import (
 from mjlab_playground.asset_zoo.robots.booster_t1.t1_constants import (
   get_t1_robot_cfg as get_t1_robot_cfg,
 )
+from mjlab_playground.asset_zoo.robots.unitree_go2.go2_constants import (
+    get_go2_robot_cfg as get_go2_robot_cfg
+)
