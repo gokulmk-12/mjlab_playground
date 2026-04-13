@@ -5,7 +5,6 @@ import mujoco.viewer as viewer
 from mjlab.entity.entity import Entity
 from mjlab.actuator import BuiltinPositionActuatorCfg
 from mjlab.entity import EntityArticulationInfoCfg, EntityCfg
-from mjlab.utils.os import update_assets
 from mjlab.utils.spec_config import CollisionCfg
 
 GO2_SOURCE: Path = Path(__file__).parent
@@ -14,14 +13,8 @@ GO2_XML: Path = (
 )
 assert GO2_XML.exists()
 
-def get_assets(meshdir: str) -> dict[str, bytes]:
-    assets: dict[str, bytes] = {}
-    update_assets(assets, GO2_XML.parent / "assets", meshdir)
-    return assets
-
 def get_spec() -> mujoco.MjSpec:
     spec = mujoco.MjSpec.from_file(str(GO2_XML))
-    spec.assets = get_assets(spec.meshdir)
     return spec
 
 ## Actuator Configs for the GO2 Robot
@@ -30,7 +23,7 @@ GO2_ACTUATOR_HIP = BuiltinPositionActuatorCfg(
         ".*hip_.*",
     ),
     stiffness=20.0,
-    damping=1.0,
+    damping=0.5,
     effort_limit=23.5,
     armature=0.01,
 )
@@ -39,7 +32,7 @@ GO2_ACTUATOR_THIGH = BuiltinPositionActuatorCfg(
     ".*thigh_.*",
   ),
   stiffness=20.0,
-  damping=1.0,
+  damping=0.5,
   effort_limit=23.5,
   armature=0.01,
 )
@@ -47,20 +40,21 @@ GO2_ACTUATOR_CALF = BuiltinPositionActuatorCfg(
   target_names_expr=(
     ".*calf_.*",
   ),
-  stiffness=40.0,
-  damping=2.0,
+  stiffness=20.0,
+  damping=0.5,
   effort_limit=45,
   armature=0.02,
 )
 
 INIT_STATE = EntityCfg.InitialStateCfg(
-    pos=(0.0, 0.0, 0.32),
+    pos=(0.0, 0.0, 0.34),
+    rot=(1.0, 0.0, 0.0, 0.0),
     joint_pos={
-        "FL_thigh_joint": 0.9,
-        "FR_thigh_joint": 0.9,
-        "RL_thigh_joint": 0.9,
-        "RR_thigh_joint": 0.9,
-        ".*calf_joint": -1.8,
+        "FL_thigh_joint": 0.8,
+        "FR_thigh_joint": 0.8,
+        "RL_thigh_joint": 1.0,
+        "RR_thigh_joint": 1.0,
+        ".*calf_joint": -1.5,
         ".*R_hip_joint": 0.1,
         ".*L_hip_joint": -0.1,
     },
