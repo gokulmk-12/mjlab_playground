@@ -128,7 +128,11 @@ def make_backflip_env_cfg() -> ManagerBasedRlEnvCfg:
         ),
         "update_stage_manager": EventTermCfg(
             func=mdp.update_stage_manager,
-            mode="step"
+            mode="step",
+            params={
+                "entity_name": "robot",
+                "feet_sensor_name": "feet_ground_contact"
+            }
         ),
         "reset_base": EventTermCfg(
             func=mdp.reset_root_state_uniform,

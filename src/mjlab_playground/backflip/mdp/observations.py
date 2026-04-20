@@ -10,6 +10,11 @@ if TYPE_CHECKING:
     from mjlab.entity import Entity
     from mjlab.envs import ManagerBasedRlEnv
 
+def _ensure_stage_manager(env: ManagerBasedRlEnv) -> BackflipStageManager:
+    if "stage_manager" not in env.extras:
+        env.extras["stage_manager"] = BackflipStageManager(env=env)
+    return env.extras["stage_manager"]
+
 def foot_contact(env: ManagerBasedRlEnv, sensor_name: str) -> torch.Tensor:
     sensor: ContactSensor = env.scene[sensor_name]
     sensor_data = sensor.data
@@ -22,7 +27,7 @@ def backflip_stage_one_hot(env: ManagerBasedRlEnv) -> torch.Tensor:
     Reads from env.extras['stage_manager'] — must be updated before
     observations are computed each step.
     """
-    return env.extras["stage_manager"].stage_one_hot
+    return _ensure_stage_manager(env).stage_one_hot
 
 def backflip_is_half_turn(env: ManagerBasedRlEnv) -> torch.Tensor:
     """Whether robot has passed the halfway point of the flip. Shape (N, 1)."""
@@ -30,11 +35,11 @@ def backflip_is_half_turn(env: ManagerBasedRlEnv) -> torch.Tensor:
 
 def backflip_is_one_turn(env: ManagerBasedRlEnv) -> torch.Tensor:
     """Whether robot has completed full rotation. Shape (N, 1)."""
-    return env.extras["stage_manager"].is_one_turn.float().unsqueeze(-1)
+    return _ensure_stage_manager(env).is_one_turn.float().unsqueeze(-1)
 
 def backflip_turn_flags(env: ManagerBasedRlEnv) -> torch.Tensor:
     """Half-turn and full-turn flags concatenated. Shape (N, 2)."""
-    stage_mgr: BackflipStageManager = env.extras["stage_manager"]
+    stage_mgr: BackflipStageManager = _ensure_stage_manager(env)
     half = stage_mgr.is_half_turn.float().unsqueeze(-1)  # (N, 1)
     full = stage_mgr.is_one_turn.float().unsqueeze(-1) 
     return torch.cat([half, full], dim=-1)

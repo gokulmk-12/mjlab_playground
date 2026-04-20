@@ -11,6 +11,7 @@ from mjlab.utils.lab_api.math import euler_xyz_from_quat
 
 if TYPE_CHECKING:
     from mjlab.envs import ManagerBasedRlEnv
+    from mjlab.sensor.contact_sensor import ContactSensor
 
 def base_height_reward(env: ManagerBasedRlEnv, stand_height: float = 0.35, sit_height: float = 0.20, jump_height_cap: float = 0.5, entity_name: str = "robot") -> torch.Tensor:
     """Stage-wise base height reward.
@@ -113,10 +114,11 @@ def foot_contact_sequence_penalty(env: ManagerBasedRlEnv, feet_sensor_name: str)
     stage_mgr: BackflipStageManager = env.extras["stage_manager"]
     in_jump = stage_mgr.in_stage(STAGE_JUMP)
 
-    sensor = env.scene[feet_sensor_name]
-    foot_contacts = sensor.data.found[:, :, 0]
+    sensor: ContactSensor = env.scene[feet_sensor_name]
+    assert sensor.data.found is not None
+    foot_contacts = sensor.data.found
 
-    rear_contact = foot_contacts[:, :2] | foot_contacts[:, 3] # RL | RR
+    rear_contact = torch.logical_or(foot_contacts[:, 2], foot_contacts[:, 3]) # RL | RR
     rear_left_ground = ~ rear_contact
 
     # Cost: rear feet off ground during jump = bad sequence
