@@ -15,7 +15,6 @@ from mjlab.managers.reward_manager import RewardTermCfg
 from mjlab.managers.scene_entity_config import SceneEntityCfg
 from mjlab.managers.termination_manager import TerminationTermCfg
 from mjlab.scene import SceneCfg
-from mjlab.sensor import GridPatternCfg, ObjRef, RayCastSensorCfg, TerrainHeightSensorCfg
 from mjlab.sim import MujocoCfg, SimulationCfg
 from mjlab.tasks.velocity import mdp
 from mjlab.tasks.velocity.mdp import UniformVelocityCommandCfg
@@ -24,7 +23,7 @@ from mjlab.terrains.config import ROUGH_TERRAINS_CFG
 from mjlab.utils.noise import UniformNoiseCfg as Unoise
 from mjlab.viewer import ViewerConfig
 
-import src.mjlab_playground.backflip.mdp as mdp
+import mjlab_playground.backflip.mdp as mdp
 
 def make_backflip_env_cfg() -> ManagerBasedRlEnvCfg:
     """Create backflip task configuration."""
@@ -116,7 +115,7 @@ def make_backflip_env_cfg() -> ManagerBasedRlEnvCfg:
     events: dict[str, EventTermCfg] = {
         "init_stage_manager": EventTermCfg(
             func=mdp.init_stage_manager,
-            mode="startup",
+            mode="reset",
             params={
                 "feet_sensor_name": "feet_ground_contact",
                 "settle_steps": 10,
@@ -185,7 +184,7 @@ def make_backflip_env_cfg() -> ManagerBasedRlEnvCfg:
             func=mdp.joint_torques_l2,
             weight=-2.5e-4,
         ),
-        "style":         RewardTermCfg(
+        "style": RewardTermCfg(
             func=mdp.style_penalty,
             weight=0.1,
             params={
@@ -240,19 +239,15 @@ def make_backflip_env_cfg() -> ManagerBasedRlEnvCfg:
         # primary success metric — did the robot complete a full flip
         "flip_success": MetricsTermCfg(
             func=mdp.flip_success,
-            reduce="last",
         ),
         "stage_reached": MetricsTermCfg(
             func=mdp.max_stage_reached,
-            reduce="mean",
         ),
         "air_rate": MetricsTermCfg(
             func=mdp.air_stage_rate,
-            reduce="mean",
         ),
         "land_rate": MetricsTermCfg(
             func=mdp.land_stage_rate,
-            reduce="mean",
         ),
         "mean_action_acc": MetricsTermCfg(
             func=mdp.mean_action_acc,
